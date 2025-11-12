@@ -1,0 +1,53 @@
+body {
+  width: 250px;
+  margin: 0;
+  padding: 10px;
+  font-family: "Segoe UI", sans-serif;
+  text-align: center;
+  background-color: #111;
+  color: white;
+}
+
+h2 {
+  margin: 0 0 10px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.app {
+  background: #1e1e1e;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.app:hover {
+  background: #333;
+}
+
+.app img {
+  width: 40px;
+  height: 40px;
+}
+
+.logo {
+  display: inline-block;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: linear-gradient(180deg,#222,#444);
+  color: #fff;
+  text-align: center;
+  line-height: 34px;
+  font-size: 18px;
+  margin-right: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  vertical-align: middle;
+}
+
+/* ...existing code... */

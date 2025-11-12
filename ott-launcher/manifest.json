@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "OTT Quick Launcher",
+  "description": "Quickly access your favorite OTT apps — Netflix, Hotstar, Zee5, and more.",
+  "version": "1.0",
+  "icons": {
+    "48": "icons/netflix.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Open OTT Hub"
+  },
+  "permissions": ["tabs"]
+}
