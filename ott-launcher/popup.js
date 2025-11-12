@@ -28,37 +28,52 @@ apps.forEach(app => {
 });
 
 /*
-  Add a top-right theme badge showing sun (light) or moon+stars (dark)
-  with the app icons as a blended background, and display detected city.
-  Implementation uses inline styles only (no CSS file modifications).
+  Inject a full-body themed overlay (CSS inserted via JS only).
+  - top-right shows a sun-with-clouds (light) or moon-with-stars (dark)
+  - the SVG is large and positioned top-right; app icons form a subtle tiled/background layer
+  - overlay blends with the whole body (background-blend-mode) and is non-interactive
+  - also shows detected city at the top-right above the overlay
+  No external CSS files are modified.
 */
 (() => {
   const isDark = document.documentElement.classList.contains('dark');
 
-  // small inline SVGs for sun and moon+stars (kept compact)
+  // compact SVGs for sun+clouds and moon+stars (kept small)
   const sunSVG = encodeURIComponent(`
-    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
-      <g fill='none' stroke='rgba(255,230,128,0.98)' stroke-width='2'>
-        <circle cx='32' cy='32' r='10' fill='rgba(255,210,64,0.98)' stroke='none'/>
-      </g>
-      <g stroke='rgba(255,210,64,0.9)' stroke-width='2'>
-        <path d='M32 4v6M32 54v6M4 32h6M54 32h6M10 10l4 4M50 50l4 4M10 54l4-4M50 14l4-4'/>
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
+      <defs>
+        <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="6" result="b"/>
+          <feBlend in="SourceGraphic" in2="b"/>
+        </filter>
+      </defs>
+      <g filter="url(#g)">
+        <circle cx="40" cy="40" r="28" fill="#FFD54A"/>
+        <g stroke="#FFD54A" stroke-width="6" stroke-linecap="round">
+          <path d="M40 4v18M40 76v18M4 40h18M76 40h18M12 12l12 12M136 136l12 12M12 68l12-12M136 28l12-12"/>
+        </g>
+        <g transform="translate(70,70) scale(0.9)">
+          <ellipse cx="24" cy="48" rx="36" ry="20" fill="#ffffff" opacity="0.95"/>
+          <ellipse cx="60" cy="56" rx="28" ry="14" fill="#ffffff" opacity="0.9"/>
+        </g>
       </g>
     </svg>
   `);
 
   const moonSVG = encodeURIComponent(`
-    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>
-      <path d='M42 52c-11 0-20-9-20-20 0-7 4-13 10-16-8 1-14 8-14 16 0 9 7 16 16 16 5 0 9-2 12-4z' fill='rgba(220,230,255,0.96)'/>
-      <g fill='rgba(255,255,255,0.9)'>
-        <circle cx='48' cy='16' r='1.6'/>
-        <circle cx='52' cy='22' r='1.4'/>
-        <circle cx='44' cy='10' r='1.2'/>
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
+      <g>
+        <path d="M104 28c-26 0-48 22-48 48 0 18 9 35 24 44-30-2-52-28-52-58 0-32 26-58 58-58 10 0 19 2 26 6z" fill="#E6F0FF"/>
+        <g fill="#fff" opacity="0.95">
+          <circle cx="130" cy="28" r="3.2"/>
+          <circle cx="144" cy="46" r="2.6"/>
+          <circle cx="120" cy="10" r="2.8"/>
+        </g>
       </g>
     </svg>
   `);
 
-  // background icons (order: lower layers). adjust to match your icons folder
+  // app icons used as subtle background textures
   const icons = [
     'icons/netflix.png',
     'icons/hotstar.png',
@@ -67,74 +82,84 @@ apps.forEach(app => {
     'icons/ott.png'
   ];
 
-  // Compose layered background: top layer is SVG (sun/moon), beneath are icons tiled/positioned.
+  // Compose layered background: top layer is large SVG positioned top-right, beneath are tiled icons
   const svgDataUri = `data:image/svg+xml;utf8,${isDark ? moonSVG : sunSVG}`;
-  const bgImages = [
-    `url("${svgDataUri}")`,
-    ...icons.map((p) => `url("${p}")`)
-  ].join(', ');
 
-  const bgPositions = [
-    'center center', // svg
-    '0% 0%',         // netflix
-    '100% 0%',       // hotstar
-    '0% 100%',       // zee5
-    '100% 100%'      // prime / ott
-  ].join(', ');
+  const overlay = document.createElement('div');
+  overlay.id = 'theme-overlay';
 
-  const badge = document.createElement('div');
-  badge.id = 'theme-badge';
-  Object.assign(badge.style, {
-    position: 'absolute',
-    right: '12px',
-    top: '10px',
-    width: '46px',
-    height: '46px',
-    borderRadius: '50%',
-    overflow: 'hidden',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0 6px 12px rgba(0,0,0,0.35)',
-    // layered backgrounds and blending
-    backgroundImage: bgImages,
-    backgroundPosition: bgPositions,
-    backgroundRepeat: 'no-repeat, no-repeat, no-repeat, no-repeat, no-repeat',
-    backgroundSize: 'cover, 36% 36%, 36% 36%, 36% 36%, 36% 36%',
-    backgroundBlendMode: isDark ? 'screen, normal' : 'multiply, normal',
-    cursor: 'default',
-    zIndex: '999'
-  });
+  // Inject style tag for nicer organization (all via JS; doesn't modify popup.css)
+  const style = document.createElement('style');
+  style.id = 'theme-overlay-style';
+  style.textContent = `
+    /* overlay covers whole viewport but is non-interactive (pointer-events:none) */
+    #theme-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      mix-blend-mode: normal;
+      opacity: ${isDark ? '0.18' : '0.12'};
+      transition: opacity 240ms linear;
+      background-image:
+        url("${svgDataUri}"),
+        url("${icons[0]}"),
+        url("${icons[1]}"),
+        url("${icons[2]}"),
+        url("${icons[3]}"),
+        url("${icons[4]}");
+      background-repeat: no-repeat, repeat, repeat, repeat, repeat, repeat;
+      background-position: right top, 10% 20%, 80% 15%, 30% 75%, 85% 80%, 55% 45%;
+      background-size: 46% auto, 8% 8%, 8% 8%, 8% 8%, 8% 8%, 12% 12%;
+      background-blend-mode: ${isDark ? 'screen, normal, normal, normal, normal, normal' : 'multiply, normal, normal, normal, normal, normal'};
+      transition: background 300ms ease;
+      filter: saturate(${isDark ? '1.1' : '0.95'}) blur(0.6px);
+    }
 
-  // optional subtle border to distinguish on light/dark
-  badge.style.border = isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid rgba(0,0,0,0.06)';
+    /* ensure main UI sits above the overlay */
+    body > * {
+      position: relative;
+      z-index: 2;
+    }
 
-  // small city label (placed under the badge)
-  const cityLabel = document.createElement('div');
-  cityLabel.id = 'city-label';
-  Object.assign(cityLabel.style, {
-    position: 'absolute',
-    right: '10px',
-    top: '62px',
-    fontSize: '11px',
-    lineHeight: '12px',
-    color: isDark ? '#dcecff' : '#1f2937',
-    background: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-    padding: '3px 6px',
-    borderRadius: '8px',
-    boxShadow: '0 4px 8px rgba(0,0,0,0.08)',
-    zIndex: '999',
-    maxWidth: '140px',
-    textAlign: 'right',
-    fontFamily: 'system-ui, Helvetica, Arial'
-  });
-  cityLabel.textContent = 'Locating...';
+    /* city pill and top indicator */
+    #theme-city-pill {
+      position: fixed;
+      right: 12px;
+      top: 12px;
+      z-index: 3;
+      pointer-events: auto;
+      background: ${isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.85)'};
+      color: ${isDark ? '#dcecff' : '#0b1220'};
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      box-shadow: 0 6px 14px rgba(2,6,23,0.35);
+      backdrop-filter: blur(4px);
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
 
-  // attach to body (do not modify CSS files)
-  document.body.appendChild(badge);
-  document.body.appendChild(cityLabel);
+    #theme-city-pill .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: ${isDark ? '#4ee0ff' : '#ffb347'};
+      box-shadow: 0 0 8px ${isDark ? '#4ee0ff66' : '#ffb34766'};
+    }
+  `;
+  document.head.appendChild(style);
+  document.body.appendChild(overlay);
 
-  // Try fetching city via simple IP geolocation (no permissions required). fallback silently.
+  // create small city pill (shows city and small colored dot)
+  const cityPill = document.createElement('div');
+  cityPill.id = 'theme-city-pill';
+  cityPill.innerHTML = `<span class="dot"></span><span id="theme-city-text">Locating...</span>`;
+  document.body.appendChild(cityPill);
+
+  // attempt to detect city via simple IP geolocation
   (async () => {
     try {
       const res = await fetch('https://ipapi.co/json/');
@@ -144,15 +169,19 @@ apps.forEach(app => {
       const region = j.region || j.region_code || '';
       const country = j.country_name || j.country || '';
       const display = [city, region || country].filter(Boolean).join(', ');
-      cityLabel.textContent = display || `${j.country_name || 'Unknown'}`;
+      document.getElementById('theme-city-text').textContent = display || (j.country_name || 'Unknown');
     } catch (e) {
-      // fallback to a smaller, unauthenticated service (best-effort)
       try {
         const res2 = await fetch('https://ipwho.is/');
-        const j2 = await res2.json();
-        cityLabel.textContent = j2.city ? `${j2.city}, ${j2.country}` : 'Unknown';
+        if (res2.ok) {
+          const j2 = await res2.json();
+          const display = j2.city ? `${j2.city}, ${j2.country}` : (j2.country || 'Unknown');
+          document.getElementById('theme-city-text').textContent = display;
+        } else {
+          document.getElementById('theme-city-text').textContent = 'Unknown';
+        }
       } catch {
-        cityLabel.textContent = 'Unknown';
+        document.getElementById('theme-city-text').textContent = 'Unknown';
       }
     }
   })();
