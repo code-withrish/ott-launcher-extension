@@ -2,7 +2,6 @@
 (() => {
   const hour = new Date().getHours();
   const isDark = hour < 7 || hour >= 19; // dark between 19:00-06:59
-  // apply to root so CSS uses :root.dark
   if (isDark) document.documentElement.classList.add('dark');
   else document.documentElement.classList.remove('dark');
 })();
@@ -30,160 +29,151 @@ apps.forEach(app => {
 /*
   Inject a full-body themed overlay (CSS inserted via JS only).
   - top-right shows a sun-with-clouds (light) or moon-with-stars (dark)
-  - the SVG is large and positioned top-right; app icons form a subtle tiled/background layer
-  - overlay blends with the whole body (background-blend-mode) and is non-interactive
-  - also shows detected city at the top-right above the overlay
+  - the SVG is large and positioned top-right and blends with the whole body
+  - overlay is non-interactive (pointer-events:none)
+  - also shows detected city in a small pill at top-right
   No external CSS files are modified.
 */
 (() => {
   const isDark = document.documentElement.classList.contains('dark');
 
-  // compact SVGs for sun+clouds and moon+stars (kept small)
+  // Sun with clouds SVG
   const sunSVG = encodeURIComponent(`
-    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'>
       <defs>
-        <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
+        <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="6" result="b"/>
           <feBlend in="SourceGraphic" in2="b"/>
         </filter>
       </defs>
-      <g filter="url(#g)">
-        <circle cx="40" cy="40" r="28" fill="#FFD54A"/>
-        <g stroke="#FFD54A" stroke-width="6" stroke-linecap="round">
-          <path d="M40 4v18M40 76v18M4 40h18M76 40h18M12 12l12 12M136 136l12 12M12 68l12-12M136 28l12-12"/>
+      <g filter="url(#blur)">
+        <circle cx="72" cy="64" r="44" fill="#FFD54A"/>
+        <g stroke="#FFD54A" stroke-width="10" stroke-linecap="round">
+          <path d="M72 8v28M72 120v28M8 64h28M136 64h28M24 24l20 20M196 196l20 20M24 104l20-20M196 44l20-20"/>
         </g>
-        <g transform="translate(70,70) scale(0.9)">
-          <ellipse cx="24" cy="48" rx="36" ry="20" fill="#ffffff" opacity="0.95"/>
-          <ellipse cx="60" cy="56" rx="28" ry="14" fill="#ffffff" opacity="0.9"/>
+        <g transform="translate(110,90) scale(1)">
+          <ellipse cx="36" cy="68" rx="56" ry="30" fill="#ffffff" opacity="0.95"/>
+          <ellipse cx="96" cy="80" rx="44" ry="22" fill="#ffffff" opacity="0.9"/>
         </g>
       </g>
     </svg>
   `);
 
+  // Moon with small stars SVG
   const moonSVG = encodeURIComponent(`
-    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 160'>
+    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'>
       <g>
-        <path d="M104 28c-26 0-48 22-48 48 0 18 9 35 24 44-30-2-52-28-52-58 0-32 26-58 58-58 10 0 19 2 26 6z" fill="#E6F0FF"/>
-        <g fill="#fff" opacity="0.95">
-          <circle cx="130" cy="28" r="3.2"/>
-          <circle cx="144" cy="46" r="2.6"/>
-          <circle cx="120" cy="10" r="2.8"/>
+        <path d="M156 44c-40 0-74 34-74 74 0 26 13 50 36 64-46-3-80-44-80-92 0-51 42-92 92-92 16 0 30 3 46 10z" fill="#E6F0FF"/>
+        <g fill="#ffffff" opacity="0.95">
+          <circle cx="196" cy="36" r="4"/>
+          <circle cx="216" cy="64" r="3"/>
+          <circle cx="180" cy="16" r="3.2"/>
         </g>
       </g>
     </svg>
   `);
 
-  // app icons used as subtle background textures
-  const icons = [
-    'icons/netflix.png',
-    'icons/hotstar.png',
-    'icons/zee5.png',
-    'icons/prime.png',
-    'icons/ott.png'
-  ];
-
-  // Compose layered background: top layer is large SVG positioned top-right, beneath are tiled icons
   const svgDataUri = `data:image/svg+xml;utf8,${isDark ? moonSVG : sunSVG}`;
 
   const overlay = document.createElement('div');
   overlay.id = 'theme-overlay';
 
-  // Inject style tag for nicer organization (all via JS; doesn't modify popup.css)
+  // style injected only via JS; does not modify popup.css
   const style = document.createElement('style');
   style.id = 'theme-overlay-style';
   style.textContent = `
-    /* overlay covers whole viewport but is non-interactive (pointer-events:none) */
+    /* full-body non-interactive themed overlay */
     #theme-overlay {
       position: fixed;
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      mix-blend-mode: normal;
       opacity: ${isDark ? '0.18' : '0.12'};
-      transition: opacity 240ms linear;
-      background-image:
-        url("${svgDataUri}"),
-        url("${icons[0]}"),
-        url("${icons[1]}"),
-        url("${icons[2]}"),
-        url("${icons[3]}"),
-        url("${icons[4]}");
-      background-repeat: no-repeat, repeat, repeat, repeat, repeat, repeat;
-      background-position: right top, 10% 20%, 80% 15%, 30% 75%, 85% 80%, 55% 45%;
-      background-size: 46% auto, 8% 8%, 8% 8%, 8% 8%, 8% 8%, 12% 12%;
-      background-blend-mode: ${isDark ? 'screen, normal, normal, normal, normal, normal' : 'multiply, normal, normal, normal, normal, normal'};
-      transition: background 300ms ease;
-      filter: saturate(${isDark ? '1.1' : '0.95'}) blur(0.6px);
+      transition: opacity 240ms linear, transform 300ms ease;
+      background-image: url("${svgDataUri}");
+      background-repeat: no-repeat;
+      /* place SVG off the top-right corner so it feels like a large decorative graphic */
+      background-position: calc(100% + 8%) calc(0% - 10%);
+      /* make it large so it blends across the body */
+      background-size: 65% auto;
+      /* how it blends with the existing page */
+      mix-blend-mode: ${isDark ? 'screen' : 'multiply'};
+      filter: saturate(${isDark ? '1.05' : '0.95'}) blur(0.6px);
+      will-change: transform;
+      transform: translateZ(0);
     }
-
-    /* ensure main UI sits above the overlay */
+    /* ensure UI elements render above overlay */
     body > * {
       position: relative;
       z-index: 2;
     }
 
-    /* city pill and top indicator */
+    /* city pill */
     #theme-city-pill {
       position: fixed;
       right: 12px;
       top: 12px;
       z-index: 3;
       pointer-events: auto;
-      background: ${isDark ? 'rgba(0,0,0,0.45)' : 'rgba(255,255,255,0.85)'};
+      background: ${isDark ? 'rgba(3,6,12,0.55)' : 'rgba(255,255,255,0.92)'};
       color: ${isDark ? '#dcecff' : '#0b1220'};
       font-size: 12px;
       padding: 6px 8px;
       border-radius: 10px;
-      box-shadow: 0 6px 14px rgba(2,6,23,0.35);
+      box-shadow: 0 6px 14px rgba(2,6,23,0.22);
       backdrop-filter: blur(4px);
       display: inline-flex;
       gap: 8px;
       align-items: center;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     }
-
     #theme-city-pill .dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
-      background: ${isDark ? '#4ee0ff' : '#ffb347'};
-      box-shadow: 0 0 8px ${isDark ? '#4ee0ff66' : '#ffb34766'};
+      background: ${isDark ? '#6ee7ff' : '#ffb347'};
+      box-shadow: 0 0 8px ${isDark ? '#6ee7ff44' : '#ffb34744'};
     }
   `;
   document.head.appendChild(style);
   document.body.appendChild(overlay);
 
-  // create small city pill (shows city and small colored dot)
+  // small city pill element
   const cityPill = document.createElement('div');
   cityPill.id = 'theme-city-pill';
   cityPill.innerHTML = `<span class="dot"></span><span id="theme-city-text">Locating...</span>`;
   document.body.appendChild(cityPill);
 
-  // attempt to detect city via simple IP geolocation
+  // geolocation: prefer ipwho.is (CORS-friendly). fallback via public proxy only if needed.
   (async () => {
-    try {
-      const res = await fetch('https://ipapi.co/json/');
-      if (!res.ok) throw new Error('geo fetch failed');
-      const j = await res.json();
-      const city = j.city || '';
-      const region = j.region || j.region_code || '';
-      const country = j.country_name || j.country || '';
-      const display = [city, region || country].filter(Boolean).join(', ');
-      document.getElementById('theme-city-text').textContent = display || (j.country_name || 'Unknown');
-    } catch (e) {
+    async function tryFetchJson(url) {
       try {
-        const res2 = await fetch('https://ipwho.is/');
-        if (res2.ok) {
-          const j2 = await res2.json();
-          const display = j2.city ? `${j2.city}, ${j2.country}` : (j2.country || 'Unknown');
-          document.getElementById('theme-city-text').textContent = display;
-        } else {
-          document.getElementById('theme-city-text').textContent = 'Unknown';
-        }
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('non-ok');
+        return await res.json();
       } catch {
-        document.getElementById('theme-city-text').textContent = 'Unknown';
+        return null;
       }
     }
-  })();
 
+    let geo = await tryFetchJson('https://ipwho.is/');
+    if (!geo) {
+      // fallback via a public CORS proxy (best-effort). Remove/change if you don't want public proxy usage.
+      const proxy = 'https://corsproxy.io/?';
+      geo = await tryFetchJson(proxy + 'https://ipapi.co/json/');
+    }
+
+    const cityTextEl = document.getElementById('theme-city-text');
+    if (!cityTextEl) return;
+
+    if (geo) {
+      const city = geo.city || '';
+      const region = geo.region || geo.region_code || '';
+      const country = geo.country || geo.country_name || '';
+      const display = [city, region || country].filter(Boolean).join(', ');
+      cityTextEl.textContent = display || (country || 'Unknown');
+    } else {
+      cityTextEl.textContent = 'Unknown';
+    }
+  })();
 })();
