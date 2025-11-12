@@ -111,8 +111,9 @@ apps.forEach(app => {
     /* city pill */
     #theme-city-pill {
       position: fixed;
+      margin: 10px;
       right: 12px;
-      top: 12px;
+      bottom: 12px;
       z-index: 3;
       pointer-events: auto;
       background: ${isDark ? 'rgba(3,6,12,0.55)' : 'rgba(255,255,255,0.92)'};
