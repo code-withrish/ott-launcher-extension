@@ -4,7 +4,7 @@
   "description": "Quickly access your favorite OTT apps — Netflix, Hotstar, Zee5, and more.",
   "version": "1.0",
   "icons": {
-    "48": "icons/netflix.png"
+    "48": "icons/ott.png"
   },
   "action": {
     "default_popup": "popup.html",

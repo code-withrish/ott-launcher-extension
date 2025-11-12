@@ -1,53 +1,97 @@
+/* Theme variables */
+:root {
+  --bg: #ffffff;
+  --panel: #f3f4f6;
+  --text: #111827;
+  --tile: #ffffff;
+  --tile-shadow: rgba(0,0,0,0.06);
+}
+
+:root.dark {
+  --bg: #0b0b0b;
+  --panel: #0f1724;
+  --text: #e6eef8;
+  --tile: #111216;
+  --tile-shadow: rgba(0,0,0,0.6);
+}
+
+/* Basic layout */
 body {
-  width: 250px;
-  margin: 0;
-  padding: 10px;
-  font-family: "Segoe UI", sans-serif;
-  text-align: center;
-  background-color: #111;
-  color: white;
+  margin: 12px;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: var(--bg);
+  color: var(--text);
 }
 
-h2 {
-  margin: 0 0 10px;
+/* Logo / heading */
+.logo {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: linear-gradient(180deg,#222,#333);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.logo-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
 }
 
+/* Grid & tiles */
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  gap: 12px;
+  margin-top: 10px;
 }
 
 .app {
-  background: #1e1e1e;
-  padding: 10px;
-  border-radius: 8px;
+  background: var(--tile);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 6px 10px var(--tile-shadow);
   cursor: pointer;
-  transition: 0.2s;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 84px;
 }
 
 .app:hover {
-  background: #333;
+  transform: translateY(-4px);
+  transition: transform 120ms ease;
 }
 
-.app img {
-  width: 40px;
-  height: 40px;
+.app-icon {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: transparent;
+  margin-bottom: 8px;
 }
 
-.logo {
-  display: inline-block;
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
-  background: linear-gradient(180deg,#222,#444);
-  color: #fff;
-  text-align: center;
-  line-height: 34px;
-  font-size: 18px;
-  margin-right: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-  vertical-align: middle;
+.app-label {
+  font-size: 13px;
+  line-height: 1;
+  color: var(--text);
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ...existing code... */
+/* small screens */
+@media (max-width: 300px) {
+  .app-icon { width: 46px; height: 46px; }
+  .grid { gap: 8px; }
+}
